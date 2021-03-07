@@ -32,7 +32,6 @@ AUTH_USER_MODEL = 'core.User'
 # Application definition
 
 INSTALLED_APPS = [
-    'backapp.apps.BackappConfig',
     'core.apps.CoreConfig',
     'drf_yasg',
     'rest_framework',
@@ -74,7 +73,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'pgp_messenger_back.wsgi.application'
 
-REST_FRAMEWORK = { 'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema' }
+REST_FRAMEWORK = { 
+    'DEFAULT_SCHEMA_CLASS':  ('rest_framework.schemas.coreapi.AutoSchema',
+    'rest_framework_simplejwt.authentication.JWTAuthentication',
+
+    )
+}
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
