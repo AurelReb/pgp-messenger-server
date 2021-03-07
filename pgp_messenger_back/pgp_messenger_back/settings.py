@@ -27,10 +27,13 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+AUTH_USER_MODEL = 'core.User'
 
 # Application definition
 
 INSTALLED_APPS = [
+    'backapp.apps.BackappConfig',
+    'core.apps.CoreConfig',
     'drf_yasg',
     'rest_framework',
     'django.contrib.admin',
