@@ -5,7 +5,6 @@ from django.contrib.auth.models import PermissionsMixin
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.validators import UnicodeUsernameValidator
-from django.contrib import auth
 
 
 class MyUserManager(BaseUserManager):
@@ -39,10 +38,11 @@ class MyUserManager(BaseUserManager):
 
         return self._create_user(username, password, **extra_fields)
 
+
 class User(AbstractBaseUser, PermissionsMixin):
     pgp_public = models.TextField(null=False, blank=False)
-    two_factor_auth = models.BooleanField(null=True, blank=False)
-    pgp_private = models.TextField(null=False, blank=True)
+    two_factor_auth = models.BooleanField(default=False)
+    pgp_private = models.TextField(null=True, blank=True)
 
     username_validator = UnicodeUsernameValidator()
 
@@ -80,9 +80,3 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.username
-
-
-class Message (models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False)
-    message = models.TextField(null=False, blank=True)
-    created_at = models.DateField(auto_now_add=True)
