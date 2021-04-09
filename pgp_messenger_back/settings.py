@@ -32,7 +32,6 @@ AUTH_USER_MODEL = 'core.User'
 # Application definition
 
 INSTALLED_APPS = [
-    'core.apps.CoreConfig',
     'drf_yasg',
     'rest_framework',
     'django.contrib.admin',
@@ -41,6 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'core',
+    'message',
 ]
 
 MIDDLEWARE = [
