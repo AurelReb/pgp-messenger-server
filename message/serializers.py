@@ -51,7 +51,7 @@ class ConversationReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Conversation
-        fields = ('id', 'users')
+        fields = ('id', 'name', 'users')
 
 
 class ConversationWriteSerializer(serializers.ModelSerializer):
@@ -59,20 +59,20 @@ class ConversationWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Conversation
-        fields = ('id', 'users')
+        fields = ('id', 'name', 'users')
 
     def create(self, validated_data):
         # get user list from request data
-        user_list = validated_data.get('users')
+        user_list = validated_data.pop('users')
         user_list.append(self.context['request'].user)
         # get queryset from the user list
         users = (User.objects
-                     .filter(username__in=validated_data.get('users'))
+                     .filter(username__in=user_list)
                      .values_list('id', flat=True))
         if users.count() < 2:
             raise ValidationError('None of the given users exist')
         # after creating conversation, add corresponding users to it
-        conversation = Conversation.objects.create()
+        conversation = Conversation.objects.create(**validated_data)
         conversation.users.add(*users)
         conversation.save()
         return conversation

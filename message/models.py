@@ -4,6 +4,10 @@ from core.models import User
 
 class Conversation(models.Model):
     users = models.ManyToManyField(User, related_name="conversations")
+    name = models.CharField(max_length=64, blank=True)
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Message(models.Model):

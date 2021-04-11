@@ -6,8 +6,8 @@ from message.models import Conversation, Message
 
 @admin.register(Conversation)
 class ConversationAdmin(admin.ModelAdmin):
-    search_fields = ('users',)
-    list_display = ('id',)
+    search_fields = ('name',)
+    list_display = ('name',)
 
 
 @admin.register(Message)
@@ -24,6 +24,6 @@ class MessageAdmin(admin.ModelAdmin):
     def get_conversation(self, obj):
         link = reverse("admin:message_conversation_change",
                        args=[obj.conversation.id])
-        return format_html(f'<a href="{link}">{obj.conversation.id}</a>')
+        return format_html(f'<a href="{link}">{obj.conversation}</a>')
     get_conversation.admin_order_field = 'conversation'
     get_conversation.short_description = 'Conversation'
