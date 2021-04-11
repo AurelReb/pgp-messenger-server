@@ -7,7 +7,8 @@ from rest_framework import permissions, authentication
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
-from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, UpdateModelMixin
+from rest_framework.mixins import (
+    CreateModelMixin, RetrieveModelMixin, UpdateModelMixin)
 
 schema_view = get_schema_view(
     openapi.Info(

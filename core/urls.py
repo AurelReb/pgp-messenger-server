@@ -12,8 +12,12 @@ urlpatterns = [
             'patch': 'partial_update',
         }
     )),
-    path('user/token/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('user/token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
-    path('redoc/', login_required(schema_view.with_ui('redoc', cache_timeout=0)), name='redoc'),
-    path('swagger/', login_required(schema_view.with_ui('swagger', cache_timeout=0)), name='swagger'),
+    path('user/token/', jwt_views.TokenObtainPairView.as_view(),
+         name='token_obtain_pair'),
+    path('user/token/refresh/',
+         jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
+    path('redoc/', login_required(schema_view.with_ui('redoc',
+         cache_timeout=0)), name='redoc'),
+    path('swagger/', login_required(schema_view.with_ui('swagger',
+         cache_timeout=0)), name='swagger'),
 ]
