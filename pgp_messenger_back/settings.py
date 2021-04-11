@@ -29,17 +29,19 @@ ALLOWED_HOSTS = []
 
 AUTH_USER_MODEL = 'core.User'
 
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
 # Application definition
 
 INSTALLED_APPS = [
-    'drf_yasg',
-    'rest_framework',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'drf_yasg',
     'core',
     'message',
 ]
@@ -74,12 +76,33 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'pgp_messenger_back.wsgi.application'
 
-REST_FRAMEWORK = { 
-    'DEFAULT_SCHEMA_CLASS':  ('rest_framework.schemas.coreapi.AutoSchema',
-    'rest_framework_simplejwt.authentication.JWTAuthentication',
-
+REST_FRAMEWORK = {
+    'DEFAULT_ATHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
 }
+
+LOGIN_URL = '/user/token/'
+
+SWAGGER_ATHAURIZATION_DESCRIPTION = """JWT Authorization header using the Bearer scheme.
+
+Enter 'Bearer' [space] and then your token in the text input below.
+
+Example: \"Bearer 12345abcdef\""""
+
+# Swagger
+SWAGGER_SETTINGS = {
+    'DEFAULT_AUTO_SCHEMA_CLASS': 'core.swagger.CompoundTagsSchema',
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'description': SWAGGER_ATHAURIZATION_DESCRIPTION,
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    }
+}
+
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
