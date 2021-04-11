@@ -13,4 +13,5 @@ class Message(models.Model):
                                      null=False,
                                      related_name="messages")
     message = models.TextField(null=False, blank=True)
-    created_at = models.DateField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
