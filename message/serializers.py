@@ -48,10 +48,17 @@ class ConversationUserSerializer(serializers.ModelSerializer):
 
 class ConversationReadSerializer(serializers.ModelSerializer):
     users = ConversationUserSerializer(many=True)
+    last_user = serializers.SerializerMethodField()
+
+    def get_last_user(self, obj):
+        if obj.messages.count():
+            last_message = obj.messages.order_by('-created_at').last()
+            return last_message.user.username
+        return None
 
     class Meta:
         model = Conversation
-        fields = ('id', 'name', 'users')
+        fields = ('id', 'name', 'users', 'last_user')
 
 
 class ConversationWriteSerializer(serializers.ModelSerializer):
