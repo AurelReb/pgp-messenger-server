@@ -83,8 +83,12 @@ TEMPLATES = [
 WSGI_APPLICATION = 'pgp_messenger_back.wsgi.application'
 
 REST_FRAMEWORK = {
-    'DEFAULT_ATHENTICATION_CLASSES': (
+    'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
     )
 }
 
