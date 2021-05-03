@@ -29,7 +29,6 @@ class UserViewSet(CreateModelMixin,
                   APIView):
     serializer_class = UserSerializer
     permission_classes = (IsCreationOrIsAuthenticated,)
-    authentication_classes = (authentication.SessionAuthentication,)
     queryset = User.objects.all()
 
     def create(self, request, *args, **kwargs):
