@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
 from pathlib import Path
+import datetime
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -92,9 +93,16 @@ REST_FRAMEWORK = {
     )
 }
 
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": datetime.timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": datetime.timedelta(days=7),
+    "ROTATE_REFRESH_TOKENS": True,
+}
+
+
 LOGIN_URL = '/user/token/'
 
-SWAGGER_ATHAURIZATION_DESCRIPTION = """JWT Authorization header using the Bearer scheme.
+SWAGGER_AUTHAURIZATION_DESCRIPTION = """JWT Authorization header using the Bearer scheme.
 
 Enter 'Bearer' [space] and then your token in the text input below.
 
@@ -106,7 +114,7 @@ SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
         'Bearer': {
             'type': 'apiKey',
-            'description': SWAGGER_ATHAURIZATION_DESCRIPTION,
+            'description': SWAGGER_AUTHAURIZATION_DESCRIPTION,
             'name': 'Authorization',
             'in': 'header'
         }
