@@ -15,3 +15,9 @@ class RelatedUserField(PrimaryKeyRelatedField):
         except User.DoesNotExist:
             raise ValidationError(
                 f"{data} doesn't exist or doesn't accept private messages")
+
+    def to_representation(self, obj):
+        return {
+            'username': obj.username,
+            'pgp_public': obj.pgp_public
+        }
