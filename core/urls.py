@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.urls import path
 from rest_framework_simplejwt import views as jwt_views
-from core.views import UserViewSet, schema_view
+from core.views import RegisterFilterAPIView, UserViewSet, schema_view
 
 urlpatterns = [
     path('user/', UserViewSet.as_view(
@@ -20,4 +20,5 @@ urlpatterns = [
          cache_timeout=0)), name='redoc'),
     path('swagger/', login_required(schema_view.with_ui('swagger',
          cache_timeout=0)), name='swagger'),
+    path('new_ws_ticket/', RegisterFilterAPIView.as_view()),
 ]

@@ -3,7 +3,10 @@ from django.urls.conf import include
 from rest_framework_nested import routers
 
 from message.views import (
-    ConversationViewSet, MessageNestedViewSet, MessageViewSet)
+    ConversationViewSet,
+    MessageNestedViewSet,
+    MessageViewSet,
+)
 
 router = routers.DefaultRouter()
 router.register('conversations', ConversationViewSet, 'conversations')

@@ -32,6 +32,8 @@ AUTH_USER_MODEL = 'core.User'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
+ASGI_APPLICATION = "pgp_messenger_back.asgi.application"
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
 ]
@@ -50,6 +52,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'core',
     'message',
+    'channels'
 ]
 
 MIDDLEWARE = [
@@ -99,6 +102,30 @@ SIMPLE_JWT = {
     "ROTATE_REFRESH_TOKENS": True,
 }
 
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
+
+TICKET_EXPIRE_TIME = 60
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "REDIS_CLIENT_KWARGS": {
+                "health_check_interval": 10,
+                "socket_keepalive": True,
+            }
+        },
+        "KEY_PREFIX": "cache"
+    }
+}
 
 LOGIN_URL = '/user/token/'
 

@@ -33,10 +33,15 @@ class MessageSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         # add user and conversation to validated_data (nested route)
-        conversation = Conversation.objects.get(
-            pk=self.context["view"].kwargs["conversation_pk"])
-        validated_data["conversation"] = conversation
-        validated_data["user"] = self.context["request"].user
+        if not self.context.get('websocket'):
+            conversation = Conversation.objects.get(
+                pk=self.context["view"].kwargs["conversation_pk"])
+            validated_data["conversation"] = conversation
+            validated_data["user"] = self.context["request"].user
+        else:
+            validated_data["conversation"] = self.context["conversation"]
+            validated_data["user"] = self.context["user"]
+
         return super().create(validated_data)
 
 
