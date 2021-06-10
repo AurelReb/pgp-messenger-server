@@ -1,5 +1,8 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
 from message.models import Message, Conversation
 from message.fields import RelatedUserField
 from core.models import User
@@ -43,6 +46,36 @@ class MessageSerializer(serializers.ModelSerializer):
             validated_data["user"] = self.context["user"]
 
         return super().create(validated_data)
+
+    def save(self, **kwargs):
+        has_instance = bool(self.instance)
+        ret = super().save(**kwargs)
+        # Send to websocket the edited message
+        if has_instance:
+            self.send_websocket('chat.edit_message')
+        # Send to websocket new message if it was created without websocket
+        elif not self.context.get('websocket'):
+            last_msg = Message.objects.filter(
+                conversation=self.instance.conversation
+            ).exclude(id=self.instance.id).last()
+            prev_id = None
+            if last_msg:
+                prev_id = last_msg.id
+            self.send_websocket('chat.new_message', prev_id=prev_id)
+
+        return ret
+
+    def send_websocket(self, type, **kwargs):
+        channel_layer = get_channel_layer()
+        chat_name = 'chat_%s' % self.instance.conversation.id
+        async_to_sync(channel_layer.group_send)(
+            chat_name,
+            {
+                'type': type,
+                **self.data,
+                **kwargs
+            }
+        )
 
 
 class ConversationUserSerializer(serializers.ModelSerializer):

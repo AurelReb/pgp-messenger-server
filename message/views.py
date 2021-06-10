@@ -1,5 +1,7 @@
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from rest_framework import mixins
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 from message.mixins import ReadWriteSerializerMixin
 from message.models import Conversation, Message
@@ -34,3 +36,20 @@ class MessageViewSet(mixins.RetrieveModelMixin,
 
     def get_queryset(self):
         return Message.objects.filter(user=self.request.user)
+
+    # Send deleted message to websocket instances
+    def destroy(self, request, *args, **kwargs):
+        msg_id = self.get_object().id
+        conv_id = self.get_object().conversation.id
+        ret = super().destroy(request, *args, **kwargs)
+        channel_layer = get_channel_layer()
+        chat_name = 'chat_%s' % conv_id
+        async_to_sync(channel_layer.group_send)(
+            chat_name,
+            {
+                'type': 'chat.delete_message',
+                'conversation': conv_id,
+                'id': msg_id
+            }
+        )
+        return ret

@@ -65,7 +65,10 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 self.channel_name
             )
         await self.accept()
-        data = {'type': 'accept', 'conversations': self.conversations}
+        data = {
+            'type': 'websocket.accept',
+            'conversations': self.conversations
+        }
         await self.send(text_data=json.dumps(data))
 
     async def disconnect(self, close_code):
@@ -118,7 +121,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             await self.channel_layer.group_send(
                 room_group_name,
                 {
-                    'type': 'chat_message',
+                    'type': 'chat.new_message',
                     'prev_id': prev_id,
                     **data
                 }
@@ -130,10 +133,14 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             await self.send_error('Unknown error.')
 
     async def send_error(self, error):
-        data = {'type': 'error', 'error': error}
+        data = {'type': 'websocket.error', 'error': error}
         await self.send(text_data=json.dumps(data))
 
-    # Receive message from room group
-    async def chat_message(self, event):
+    # Receive event from room group
+    async def send_ws_message_from_group_event(self, event):
         # Send message to WebSocket
         await self.send(text_data=json.dumps(event))
+
+    chat_new_message = send_ws_message_from_group_event
+    chat_edit_message = send_ws_message_from_group_event
+    chat_delete_message = send_ws_message_from_group_event
