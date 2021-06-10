@@ -1,4 +1,5 @@
 import json
+import traceback
 from urllib.parse import parse_qsl
 from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
@@ -10,21 +11,29 @@ from message.serializers import MessageSerializer
 
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
-    async def authorize(self, ticket_uuid, conversation_id):
+    async def authorize(self, ticket_uuid, conversations):
         try:
-            self.conversation_id = conversation_id
-
             self.scope['has_ticket'] = bool(cache.get(ticket_uuid))
             self.scope['user'] = await sync_to_async(
                 User.objects.get
             )(id=cache.get(ticket_uuid))
-            self.scope['conversation'] = await sync_to_async(
-                Conversation.objects.get
-            )(id=self.conversation_id, users=self.scope['user'])
+
+            if conversations == 'all':
+                self.conversations = await sync_to_async(
+                    lambda **kwargs: list(Conversation.objects.filter(**kwargs)
+                                          .values_list('id', flat=True))
+                )(users=self.scope['user'])
+            else:
+                self.conversations = await sync_to_async(
+                    lambda **kwargs: list(Conversation.objects.filter(**kwargs)
+                                          .values_list('id', flat=True))
+                )(id__in=json.loads(conversations), users=self.scope['user'])
 
             # Destroy ticket for performance and security purposes
             if not cache.delete(ticket_uuid):
                 raise Exception('Ticket not found')
+            if not len(self.conversations):
+                raise Exception('Unauthorized')
 
         except (User.DoesNotExist, Conversation.DoesNotExist):
             raise Exception('Unauthorized')
@@ -35,33 +44,37 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             query_params = dict(parse_qsl(query_string))
             # Check whether the websocket connection is authorized
             await self.authorize(
-                query_params.get('ticket_uuid'),
-                self.scope['url_route']['kwargs']['room_name']
+                self.scope['url_route']['kwargs']['ticket_uuid'],
+                query_params.get('conversations'),
             )
 
         except Exception:
+            traceback.print_exc()
             await self.close()
             return
 
         await self.connect()
 
     async def connect(self):
-        self.room_group_name = 'chat_%s' % self.conversation_id
+        self.room_group_names = ['chat_%s' % c for c in self.conversations]
 
-        # Join room group
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
-
+        # Join room group for all chats
+        for room_group_name in self.room_group_names:
+            await self.channel_layer.group_add(
+                room_group_name,
+                self.channel_name
+            )
         await self.accept()
+        data = {'type': 'accept', 'conversations': self.conversations}
+        await self.send(text_data=json.dumps(data))
 
     async def disconnect(self, close_code):
-        # Leave room group
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
+        # Leave room groups
+        for room_group_name in self.room_group_names:
+            await self.channel_layer.group_discard(
+                room_group_name,
+                self.channel_name
+            )
 
     async def new_message(self, message, user, conversation):
         serializer = MessageSerializer(data={
@@ -78,31 +91,47 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
     # Receive message from WebSocket
     async def receive(self, text_data):
-        text_data_json = json.loads(text_data)
-        conversation = self.scope['conversation']
-        data = await self.new_message(
-            text_data_json['message'],
-            self.scope['user'],
-            conversation
-        )
+        try:
+            text_data_json = json.loads(text_data)
+            conversation = await sync_to_async(
+                lambda: Conversation.objects.filter(id__in=self.conversations)
+                .get(id=text_data_json['conversation'])
+            )()
 
-        # Send last message id so client can check whether it's synced
-        prev_id = None
-        last_msg = await sync_to_async(
-            lambda c: Message.objects.filter(conversation=c).last()
-        )(conversation)
-        if last_msg:
-            prev_id = last_msg.id
+            # Get last message id so client can check whether it's synced
+            prev_id = None
+            last_msg = await sync_to_async(
+                lambda c: Message.objects.filter(conversation=c).last()
+            )(conversation)
+            if last_msg:
+                prev_id = last_msg.id
 
-        # Send message to room group
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                'type': 'chat_message',
-                'prev_id': prev_id,
-                **data
-            }
-        )
+            data = await self.new_message(
+                text_data_json['message'],
+                self.scope['user'],
+                conversation
+            )
+
+            room_group_name = 'chat_%s' % data['conversation']
+
+            # Send message to room group
+            await self.channel_layer.group_send(
+                room_group_name,
+                {
+                    'type': 'chat_message',
+                    'prev_id': prev_id,
+                    **data
+                }
+            )
+
+        except Conversation.DoesNotExist:
+            await self.send_error('Not subscribed to this conversation.')
+        except Exception:
+            await self.send_error('Unknown error.')
+
+    async def send_error(self, error):
+        data = {'type': 'error', 'error': error}
+        await self.send(text_data=json.dumps(data))
 
     # Receive message from room group
     async def chat_message(self, event):
