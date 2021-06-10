@@ -3,8 +3,12 @@ from rest_framework import mixins
 
 from message.mixins import ReadWriteSerializerMixin
 from message.models import Conversation, Message
+from message.permissions import ConversationPermission
 from message.serializers import (
-    ConversationReadSerializer, ConversationWriteSerializer, MessageSerializer)
+    ConversationReadSerializer,
+    ConversationWriteSerializer,
+    MessageSerializer
+)
 
 
 class ConversationViewSet(ReadWriteSerializerMixin, ModelViewSet):
@@ -19,6 +23,7 @@ class MessageNestedViewSet(mixins.ListModelMixin,
                            mixins.CreateModelMixin,
                            GenericViewSet):
     serializer_class = MessageSerializer
+    permission_classes = (ConversationPermission,)
 
     def get_queryset(self):
         return Message.objects.filter(
