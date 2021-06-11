@@ -47,14 +47,18 @@ class StreamConsumer(AsyncJsonWebsocketConsumer):
             await self.close()
             return
 
-        await self.connect()
+        query_string = self.scope['query_string'].decode('utf-8')
+        query_params = dict(parse_qsl(query_string))
+        await self.connect(query_params.get('streams', ''))
 
-    async def connect(self):
+    async def connect(self, streams):
         self.room_group_names = []
         self.conversations = []
         self.all_chats = False
         self.user_stream = False
         await self.accept()
+        # Subscribe to initial streams
+        await self.subscribe(streams.split('/'))
 
     async def disconnect(self, close_code):
         # Leave room groups
