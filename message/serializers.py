@@ -67,7 +67,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
     def send_websocket(self, type, **kwargs):
         channel_layer = get_channel_layer()
-        chat_name = 'chat_%s' % self.instance.conversation.id
+        chat_name = '%s_chat' % self.instance.conversation.id
         async_to_sync(channel_layer.group_send)(
             chat_name,
             {
@@ -121,3 +121,24 @@ class ConversationWriteSerializer(serializers.ModelSerializer):
         conversation.users.add(*users)
         conversation.save()
         return conversation
+
+    def save(self, **kwargs):
+        has_instance = bool(self.instance)
+        ret = super().save(**kwargs)
+        # Send to websocket the new conv
+        if not has_instance:
+            self.send_websocket()
+
+        return ret
+
+    def send_websocket(self):
+        channel_layer = get_channel_layer()
+        for user in self.instance.users.all():
+            group_room = 'user_%s' % user.id
+            async_to_sync(channel_layer.group_send)(
+                group_room,
+                {
+                    'type': 'user.new_conversation',
+                    **self.data,
+                }
+            )

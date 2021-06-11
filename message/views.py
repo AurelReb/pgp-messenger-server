@@ -16,6 +16,23 @@ class ConversationViewSet(ReadWriteSerializerMixin, ModelViewSet):
     def get_queryset(self):
         return Conversation.objects.filter(users=self.request.user)
 
+    # Send deleted message to websocket instances
+    def destroy(self, request, *args, **kwargs):
+        conv_id = self.get_object().id
+        users = list(self.get_object().users.values_list('id', flat=True))
+        ret = super().destroy(request, *args, **kwargs)
+        channel_layer = get_channel_layer()
+        for user_id in users:
+            room_group = 'user_%s' % user_id
+            async_to_sync(channel_layer.group_send)(
+                room_group,
+                {
+                    'type': 'user.delete_conversation',
+                    'id': conv_id,
+                }
+            )
+        return ret
+
 
 class MessageNestedViewSet(mixins.ListModelMixin,
                            mixins.CreateModelMixin,
@@ -43,7 +60,7 @@ class MessageViewSet(mixins.RetrieveModelMixin,
         conv_id = self.get_object().conversation.id
         ret = super().destroy(request, *args, **kwargs)
         channel_layer = get_channel_layer()
-        chat_name = 'chat_%s' % conv_id
+        chat_name = '%s_chat' % conv_id
         async_to_sync(channel_layer.group_send)(
             chat_name,
             {
